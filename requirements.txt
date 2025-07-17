@@ -1,3 +1,4 @@
+
 streamlit
 pandas
 matplotlib
@@ -5,4 +6,3 @@ seaborn
 plotly
 statsmodels
 openpyxl
-Pillow
