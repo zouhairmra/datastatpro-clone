@@ -1,45 +1,79 @@
 import streamlit as st
-import random
 
-# Arabic UI setup
-st.set_page_config(page_title="لعبة السجينين", layout="centered")
+st.set_page_config(page_title="لعبة السجينين الذكية", layout="centered")
 st.markdown("<div style='direction: rtl; text-align: right;'>", unsafe_allow_html=True)
 
-st.title("🎲 لعبة السجينين (Prisoner's Dilemma)")
+st.title("🎯 لعبة السجينين: جولات متعددة واستراتيجية ذكية")
+st.write("العب ضد الكمبيوتر الذي يتبع استراتيجية Tit for Tat!")
 
-st.write("أنت الآن في مواجهة مع الكمبيوتر. هل ستتعاون أم تخونه؟")
+# إعداد عدد الجولات
+num_rounds = st.slider("🔢 عدد الجولات", min_value=1, max_value=10, value=5)
 
-# User choice
-student_choice = st.radio("اختر استراتيجيتك:", ["🤝 التعاون", "❌ الخيانة"])
+# خيارات اللعب
+choices = ["🤝 التعاون", "❌ الخيانة"]
 
-# Simulate computer strategy
-strategies = ["🤝 التعاون", "❌ الخيانة"]
-computer_choice = random.choice(strategies)
+# تحميل الحالة أو تهيئتها
+if "round" not in st.session_state:
+    st.session_state.round = 1
+    st.session_state.student_moves = []
+    st.session_state.computer_moves = []
+    st.session_state.results = []
 
-# Payoff matrix
-payoffs = {
-    ("🤝 التعاون", "🤝 التعاون"): (3, 3),
-    ("🤝 التعاون", "❌ الخيانة"): (0, 5),
-    ("❌ الخيانة", "🤝 التعاون"): (5, 0),
-    ("❌ الخيانة", "❌ الخيانة"): (1, 1)
-}
+# عرض الجولة الحالية
+st.subheader(f"الجولة رقم {st.session_state.round} من {num_rounds}")
+student_move = st.radio("📌 اختر حركتك:", choices, key=f"move_{st.session_state.round}")
 
-# Show result
-if st.button("🎯 العب الآن"):
-    payoff = payoffs[(student_choice, computer_choice)]
-    
-    st.markdown(f"""
-    <h4>🧑‍🎓 أنت اخترت: {student_choice}</h4>
-    <h4>💻 الكمبيوتر اختار: {computer_choice}</h4>
-    <h3>✅ النتيجة: أنت حصلت على {payoff[0]}، والكمبيوتر حصل على {payoff[1]}</h3>
-    """, unsafe_allow_html=True)
+if st.button("🔁 تأكيد الجولة"):
 
-# Explanation
-with st.expander("📘 ما هي لعبة السجينين؟"):
-    st.markdown("""
-    <p style='direction: rtl; text-align: right;'>
-    لعبة السجينين هي أحد أشهر نماذج نظرية الألعاب، وتُستخدم لتحليل قرارات الأفراد عندما تكون هناك منافع متبادلة واحتمال للخيانة. رغم أن التعاون هو الأفضل للطرفين، إلا أن الخيانة قد تُغري البعض لتحقيق مكاسب أكبر.
-    </p>
-    """, unsafe_allow_html=True)
+    # تحديد حركة الكمبيوتر (Tit for Tat)
+    if st.session_state.round == 1:
+        computer_move = "🤝 التعاون"
+    else:
+        computer_move = st.session_state.student_moves[-1]  # يقلّد الطالب
+
+    # حساب النتائج
+    payoff_matrix = {
+        ("🤝 التعاون", "🤝 التعاون"): (3, 3),
+        ("🤝 التعاون", "❌ الخيانة"): (0, 5),
+        ("❌ الخيانة", "🤝 التعاون"): (5, 0),
+        ("❌ الخيانة", "❌ الخيانة"): (1, 1)
+    }
+    student_score, computer_score = payoff_matrix[(student_move, computer_move)]
+
+    # حفظ النتائج
+    st.session_state.student_moves.append(student_move)
+    st.session_state.computer_moves.append(computer_move)
+    st.session_state.results.append((student_score, computer_score))
+
+    st.success(f"🎮 الجولة {st.session_state.round} مكتملة!")
+    st.write(f"🧑‍🎓 أنت: {student_move} | 💻 الكمبيوتر: {computer_move}")
+    st.write(f"✅ النتيجة: أنت {student_score} - الكمبيوتر {computer_score}")
+
+    st.session_state.round += 1
+
+# عند انتهاء الجولات
+if st.session_state.round > num_rounds:
+    total_student = sum(x[0] for x in st.session_state.results)
+    total_computer = sum(x[1] for x in st.session_state.results)
+
+    st.markdown("## 📊 النتائج النهائية")
+    st.write(f"🔵 نقاط الطالب: {total_student}")
+    st.write(f"🟢 نقاط الكمبيوتر: {total_computer}")
+
+    st.bar_chart({
+        "🧑‍🎓 الطالب": [total_student],
+        "💻 الكمبيوتر": [total_computer]
+    })
+
+    if total_student > total_computer:
+        st.success("🎉 مبروك! تفوقت على الكمبيوتر.")
+    elif total_student < total_computer:
+        st.warning("🤖 الكمبيوتر فاز هذه المرة.")
+    else:
+        st.info("🔁 تعادل عادل!")
+
+    if st.button("🔄 إعادة اللعب"):
+        for key in ["round", "student_moves", "computer_moves", "results"]:
+            del st.session_state[key]
 
 st.markdown("</div>", unsafe_allow_html=True)
