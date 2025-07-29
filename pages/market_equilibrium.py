@@ -81,3 +81,52 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
+st.markdown("---")
+st.header("🎯 كيف تؤثر العوامل الخارجية على العرض والطلب؟")
+
+factor = st.selectbox(
+    "اختر عاملاً للتغير:",
+    ["زيادة دخل المستهلكين", "ارتفاع تكلفة الإنتاج", "تحسن التكنولوجيا", "انخفاض عدد الموردين"]
+)
+
+# معامل انزياح
+shift = 20
+
+if factor == "زيادة دخل المستهلكين":
+    st.markdown("💰 **زيادة الدخل** تؤدي إلى زيادة الطلب على السلع العادية.")
+    demand_shifted = [q + shift for q in demand_quantities]
+    supply_shifted = supply_quantities
+    curve_note = "انزياح منحنى الطلب إلى اليمين"
+elif factor == "ارتفاع تكلفة الإنتاج":
+    st.markdown("🏭 **ارتفاع التكاليف** يجعل المنتجين أقل رغبة في العرض.")
+    demand_shifted = demand_quantities
+    supply_shifted = [q - shift for q in supply_quantities]
+    curve_note = "انزياح منحنى العرض إلى اليسار"
+elif factor == "تحسن التكنولوجيا":
+    st.markdown("🧠 **تحسن التكنولوجيا** يزيد من كفاءة الإنتاج ويزيد العرض.")
+    demand_shifted = demand_quantities
+    supply_shifted = [q + shift for q in supply_quantities]
+    curve_note = "انزياح منحنى العرض إلى اليمين"
+elif factor == "انخفاض عدد الموردين":
+    st.markdown("📉 **قلة الموردين** تؤدي إلى انخفاض العرض.")
+    demand_shifted = demand_quantities
+    supply_shifted = [q - shift for q in supply_quantities]
+    curve_note = "انزياح منحنى العرض إلى اليسار"
+
+# رسم الانزياحات
+fig2 = go.Figure()
+
+fig2.add_trace(go.Scatter(x=demand_quantities, y=prices, mode='lines', name='الطلب الأصلي', line=dict(dash='dot')))
+fig2.add_trace(go.Scatter(x=supply_quantities, y=prices, mode='lines', name='العرض الأصلي', line=dict(dash='dot')))
+
+fig2.add_trace(go.Scatter(x=demand_shifted, y=prices, mode='lines+markers', name='الطلب الجديد'))
+fig2.add_trace(go.Scatter(x=supply_shifted, y=prices, mode='lines+markers', name='العرض الجديد'))
+
+fig2.update_layout(
+    title=f"📈 {curve_note}",
+    xaxis_title="الكمية",
+    yaxis_title="السعر",
+    yaxis=dict(autorange='reversed')  # السعر من أعلى لأسفل
+)
+
+st.plotly_chart(fig2, use_container_width=True)
