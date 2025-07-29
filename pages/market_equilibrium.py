@@ -24,15 +24,19 @@ elif qs > qd:
 else:
     st.success(f"✅ السعر {price} هو **سعر التوازن**! العرض = الطلب = {qs}")
 
-# رسم بياني تفاعلي
+# رسم بياني تفاعلي مع المحاور المعكوسة
 prices = list(range(1, 11))
-demand = [quantity_demanded(p) for p in prices]
-supply = [quantity_supplied(p) for p in prices]
+demand_quantities = [quantity_demanded(p) for p in prices]
+supply_quantities = [quantity_supplied(p) for p in prices]
 
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=demand, y=prices, mode='lines+markers', name='الطلب'))
-fig.add_trace(go.Scatter(x=supply, y=prices, mode='lines+markers', name='العرض'))
-fig.add_vline(x=price, line_dash="dot", line_color="gray")
+fig.add_trace(go.Scatter(x=demand_quantities, y=prices, mode='lines+markers', name='الطلب'))
+fig.add_trace(go.Scatter(x=supply_quantities, y=prices, mode='lines+markers', name='العرض'))
+fig.add_hline(y=price, line_dash="dot", line_color="gray")
 
-fig.update_layout(title="منحنيي العرض والطلب", xaxis_title="الكمية", yaxis_title="السعر")
+fig.update_layout(title="منحنيي العرض والطلب (السعر على المحور الرأسي)",
+                  xaxis_title="الكمية",
+                  yaxis_title="السعر",
+                  yaxis=dict(autorange='reversed'))  # لجعل السعر يتناقص من أعلى لأسفل كالمعتاد
+
 st.plotly_chart(fig, use_container_width=True)
