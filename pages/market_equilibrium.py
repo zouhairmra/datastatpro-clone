@@ -131,7 +131,6 @@ fig2.update_layout(
     title=f"📈 {curve_note}",
     xaxis_title="الكمية",
     yaxis_title="السعر",
-    yaxis=dict(autorange='reversed')  # السعر من أعلى لأسفل
-)
+   )
 
 st.plotly_chart(fig2, use_container_width=True)
