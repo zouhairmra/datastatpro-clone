@@ -34,5 +34,5 @@ fig.add_trace(go.Scatter(x=prices, y=demand, mode='lines+markers', name='الط�
 fig.add_trace(go.Scatter(x=prices, y=supply, mode='lines+markers', name='العرض'))
 fig.add_vline(x=price, line_dash="dot", line_color="gray")
 
-fig.update_layout(title="منحنيي العرض والطلب", xaxis_title="السعر", yaxis_title="الكمية")
+fig.update_layout(title="منحنيي العرض والطلب", xaxis_title="الكمية", yaxis_title="السعر")
 st.plotly_chart(fig, use_container_width=True)
