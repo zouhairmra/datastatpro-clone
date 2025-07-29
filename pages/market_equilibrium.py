@@ -1,65 +1,38 @@
+# pages/market_equilibrium.py
+
 import streamlit as st
-import numpy as np
-import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
-def market_equilibrium_page():
-    st.set_page_config(page_title="📉 توازن السوق", layout="centered")
+st.set_page_config(page_title="⚖️ توازن السوق", layout="centered")
 
-    st.markdown("<h2 style='text-align:right; direction:rtl;'>📉 توازن السوق</h2>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='text-align:right; direction:rtl; font-size:18px;'>
-    يحدث <strong>توازن السوق</strong> عندما يتساوى <strong>الطلب</strong> و<strong>العرض</strong> عند سعر معين. 
-    في هذا السعر، لا يوجد فائض أو نقص في الكمية المتبادلة.
-    </div>
-    """, unsafe_allow_html=True)
+st.title("⚖️ توازن السوق")
 
-    st.markdown("## 📊 تفاعل: اختر الحالة لعرض منحنيات السوق")
+# معادلات العرض والطلب (بسيطة)
+def quantity_demanded(p): return 100 - 10 * p
+def quantity_supplied(p): return 20 + 10 * p
 
-    case = st.radio("اختر الحالة:", ["📈 زيادة (Surplus)", "📉 نقص (Shortage)", "⚖️ توازن"], horizontal=True)
+price = st.slider("اختر السعر:", min_value=1, max_value=10, value=5)
 
-    # إعداد البيانات الأساسية
-    price = np.linspace(1, 20, 20)
-    demand = 50 - 2 * price      # منحنى الطلب
-    supply = 2 * price - 10      # منحنى العرض
+qd = quantity_demanded(price)
+qs = quantity_supplied(price)
 
-    df = pd.DataFrame({
-        "السعر": price,
-        "الطلب": demand,
-        "العرض": supply
-    })
+# عرض النتيجة
+if qd > qs:
+    st.warning(f"📉 هناك **نقص** في السوق: الطلب ({qd}) > العرض ({qs})")
+elif qs > qd:
+    st.info(f"📈 هناك **فائض** في السوق: العرض ({qs}) > الطلب ({qd})")
+else:
+    st.success(f"✅ السعر {price} هو **سعر التوازن**! العرض = الطلب = {qs}")
 
-    # تعديل حسب الحالة
-    if case == "📈 زيادة (Surplus)":
-        current_price = 16
-        note = "السعر أعلى من التوازن → العرض > الطلب → فائض"
-    elif case == "📉 نقص (Shortage)":
-        current_price = 6
-        note = "السعر أقل من التوازن → الطلب > العرض → نقص"
-    else:
-        current_price = 10
-        note = "السعر عند التوازن → الطلب = العرض"
+# رسم بياني تفاعلي
+prices = list(range(1, 11))
+demand = [quantity_demanded(p) for p in prices]
+supply = [quantity_supplied(p) for p in prices]
 
-    demand_at_price = 50 - 2 * current_price
-    supply_at_price = 2 * current_price - 10
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=prices, y=demand, mode='lines+markers', name='الطلب'))
+fig.add_trace(go.Scatter(x=prices, y=supply, mode='lines+markers', name='العرض'))
+fig.add_vline(x=price, line_dash="dot", line_color="gray")
 
-    fig = px.line(df, x="السعر", y=["الطلب", "العرض"], title="منحنيات العرض والطلب")
-    fig.add_scatter(x=[current_price], y=[demand_at_price], mode="markers", name="الطلب الحالي", marker=dict(color="blue", size=12))
-    fig.add_scatter(x=[current_price], y=[supply_at_price], mode="markers", name="العرض الحالي", marker=dict(color="red", size=12))
-    fig.update_layout(xaxis_title="السعر", yaxis_title="الكمية", legend_title="المنحنيات", title_x=0.5)
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown(f"<div style='text-align:right; direction:rtl; font-size:18px; color:#333;'>{note}</div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("<h4 style='text-align:right; direction:rtl;'>🎓 خلاصة</h4>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='text-align:right; direction:rtl; font-size:18px;'>
-    <ul>
-    <li>إذا كان <strong>السعر مرتفعًا</strong>، يكون هناك <strong>فائض</strong> في السوق → السعر ينخفض.</li>
-    <li>إذا كان <strong>السعر منخفضًا</strong>، يكون هناك <strong>نقص</strong> في السوق → السعر يرتفع.</li>
-    <li>عند <strong>سعر التوازن</strong>، لا يوجد ضغط نحو الزيادة أو النقص.</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
+fig.update_layout(title="منحنيي العرض والطلب", xaxis_title="السعر", yaxis_title="الكمية")
+st.plotly_chart(fig, use_container_width=True)
