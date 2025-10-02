@@ -5,4 +5,10 @@ scikit-learn
 matplotlib
 seaborn
 openpyxl
+streamlit
+pandas
+prophet
+plotly
+numpy
+# gpt4all  # si tu utilises GPT4All
 
