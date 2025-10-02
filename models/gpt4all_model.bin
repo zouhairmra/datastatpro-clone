@@ -2,8 +2,7 @@ from gpt4all import GPT4All
 
 # Charger le modèle local
 model_path = "models/gpt4all_model.bin"
-gpt = GPT4All(model_path)
-
+gpt = GPT4All("models/gpt4all_model.bin")
 # Fonction pour interroger le modèle
 def ask_gpt4all(question, data_preview=None):
     """
