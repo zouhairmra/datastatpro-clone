@@ -1,54 +1,49 @@
 import streamlit as st
 import pandas as pd
-import joblib
-import matplotlib.pyplot as plt
+from prophet import Prophet
+import plotly.express as px
+import numpy as np
 
-st.set_page_config(page_title="Tableau de bord économique", layout="wide")
-st.title("📊 Tableau de bord économique interactif")
+# GPT4All imports
+# from gpt4all import GPT4All  # décommente si GPT4All est installé
 
-# ---- 1. Chargement du modèle ML entraîné ----
-st.sidebar.header("⚙️ Paramètres")
-uploaded_model = st.sidebar.file_uploader("Charge ton modèle entraîné (.pkl)", type="pkl")
+# --- Chargement des données ---
+df = pd.read_csv("data/pib.csv", parse_dates=['Date'])
+df.sort_values('Date', inplace=True)
 
-if uploaded_model is not None:
-    model = joblib.load(uploaded_model)
-    st.sidebar.success("Modèle chargé ✔️")
-else:
-    st.warning("Charge un modèle .pkl pour prédire.")
+st.title("Portfolio IA pour l'économie")
 
-# ---- 2. Charger un fichier Excel (optionnel) ----
-uploaded_data = st.file_uploader("Charge tes données économiques (.xlsx)", type="xlsx")
+# --- Sélection de pays ou indicateur (si dataset multi-pays) ---
+# Pour cet exemple, nous avons une seule série
+st.subheader("Prévisions du PIB")
 
-if uploaded_data is not None:
-    df = pd.read_excel(uploaded_data)
-    st.write("Aperçu des données :", df.head())
+# --- Modèle Prophet ---
+if st.button("Lancer la prévision"):
+    m = Prophet()
+    df_prophet = df.rename(columns={"Date":"ds","PIB":"y"})
+    m.fit(df_prophet)
+    future = m.make_future_dataframe(periods=8, freq='Q')
+    forecast = m.predict(future)
+    
+    fig = px.line(forecast, x='ds', y='yhat', title='Prévision du PIB avec Prophet')
+    fig.add_scatter(x=df['Date'], y=df['PIB'], mode='lines', name='Données réelles')
+    st.plotly_chart(fig)
 
-# ---- 3. Paramètres interactifs pour la prédiction ----
-st.subheader("🔧 Paramètres du scénario")
-col1, col2, col3 = st.columns(3)
+# --- Question à GPT4All ---
+st.subheader("Assistant IA pour les données économiques")
+user_question = st.text_input("Posez une question sur le PIB :")
 
-with col1:
-    taux_interet = st.slider("pib", 0.0, 15.0, 3.0)
-with col2:
-    invest_public = st.slider("inflation", 0.0, 500.0, 150.0)
-with col3:
-    croissance_pib = st.slider("chjomage", -5.0, 10.0, 2.0)
+if user_question:
+    st.write("Réponse IA :")
+    # Exemple pseudo-code pour GPT4All
+    """
+    gpt = GPT4All("models/gpt4all_model.bin")
+    prompt = f"Données PIB : {df.head(20).to_dict()}\nQuestion : {user_question}"
+    response = gpt.generate(prompt)
+    st.write(response)
+    """
+    st.write("Réponse générée par GPT4All ici (exemple)")
 
-# ---- 4. Prédiction ----
-if uploaded_model is not None and st.button("Prédire l'inflation"):
-    X_new = pd.DataFrame([[taux_interet, invest_public, croissance_pib]],
-                         columns=["Taux_interet", "Invest_Public", "Croissance_PIB"])
-    prediction = model.predict(X_new)
-    st.success(f"📈 Inflation prévue : **{prediction[0]:.2f}%**")
-
-    # Exemple d'affichage graphique
-    fig, ax = plt.subplots()
-    ax.bar(["Inflation prévue"], [prediction[0]], color='skyblue')
-    ax.set_ylabel("Inflation (%)")
-    st.pyplot(fig)
-else:
-    st.info("Charge un modèle et clique sur Prédire.")
-
-# ---- 5. Infos supplémentaires ----
-st.sidebar.markdown("---")
-st.sidebar.write("💡 **Astuce :** tu peux modifier les sliders pour tester plusieurs scénarios.")
+# --- Statistiques descriptives ---
+st.subheader("Statistiques de base")
+st.write(df.describe())
