@@ -17,9 +17,9 @@ def ask_gpt4all(question, data_preview=None):
     response = gpt.generate(prompt)
     return response
 
-# Exemple d'utilisation
+#Exemple d'utilisation
 question = "Quel pays a eu la plus forte croissance du PIB en 2019 ?"
-# data_preview = df.head(20).to_dict()  # aperçu du dataset
+data_preview = df.head(20).to_dict()  # aperçu du dataset
 response = ask_gpt4all(question)  # ou ask_gpt4all(question, data_preview)
 print(response)
 
