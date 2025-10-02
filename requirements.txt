@@ -10,5 +10,5 @@ pandas
 prophet
 plotly
 numpy
-# gpt4all  # si tu utilises GPT4All
+gpt4all  
 
