@@ -3,9 +3,26 @@ import pandas as pd
 from prophet import Prophet
 import plotly.express as px
 import numpy as np
+from gpt4all import GPT4All
 
+# Charger le modèle GPT4All local
+gpt = GPT4All("models/gpt4all_model.bin")
+
+st.title("Assistant IA pour les données économiques")
+
+user_question = st.text_input("Posez une question sur le PIB :")
+
+if user_question:
+    # Créer le prompt pour GPT4All
+    prompt = f"Données économiques (aperçu des 20 premières lignes) :\n{df.head(20).to_dict()}\nQuestion : {user_question}"
+    
+    # Générer la réponse
+    response = gpt.generate(prompt)
+    
+    # Afficher la réponse
+    st.write(response)
 # GPT4All imports
- from gpt4all import GPT4All  # décommente si GPT4All est installé
+ #from gpt4all import GPT4All  # décommente si GPT4All est installé
 
 # --- Chargement des données ---
 df = pd.read_csv("data/pib.csv", parse_dates=['Date'])
