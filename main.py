@@ -5,7 +5,7 @@ import plotly.express as px
 import numpy as np
 
 # GPT4All imports
-# from gpt4all import GPT4All  # décommente si GPT4All est installé
+ from gpt4all import GPT4All  # décommente si GPT4All est installé
 
 # --- Chargement des données ---
 df = pd.read_csv("data/pib.csv", parse_dates=['Date'])
