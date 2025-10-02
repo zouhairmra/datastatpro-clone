@@ -1,99 +1,54 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import Ridge
-from sklearn.cluster import KMeans
+import joblib
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-st.set_page_config(page_title="Analyse Éco ML", layout="wide")
+st.set_page_config(page_title="Tableau de bord économique", layout="wide")
+st.title("📊 Tableau de bord économique interactif")
 
-st.title("📊 Plateforme Économique Interactive (ML)")
+# ---- 1. Chargement du modèle ML entraîné ----
+st.sidebar.header("⚙️ Paramètres")
+uploaded_model = st.sidebar.file_uploader("Charge ton modèle entraîné (.pkl)", type="pkl")
 
-# --- 1. Upload des données ---
-st.sidebar.header("1️⃣ Charger vos données Excel")
-uploaded_file = st.sidebar.file_uploader("Fichier Excel (.xlsx)", type=["xlsx"])
-sheet = st.sidebar.text_input("Nom de la feuille", value="Sheet1")
-
-if uploaded_file is not None:
-    df = pd.read_excel(uploaded_file, sheet_name=sheet)
-    st.write("Aperçu des données :")
-    st.dataframe(df.head())
+if uploaded_model is not None:
+    model = joblib.load(uploaded_model)
+    st.sidebar.success("Modèle chargé ✔️")
 else:
-    st.info("Veuillez importer un fichier Excel.")
-    st.stop()
+    st.warning("Charge un modèle .pkl pour prédire.")
 
-# --- 2. Choix mode : Régression ou Clustering ---
-mode = st.sidebar.radio("2️⃣ Choisir l'analyse :", ["Régression (prédiction)", "Clustering (segmentation)"])
+# ---- 2. Charger un fichier Excel (optionnel) ----
+uploaded_data = st.file_uploader("Charge tes données économiques (.xlsx)", type="xlsx")
 
-# --- 3. Paramètres Régression ---
-if mode == "Régression (prédiction)":
-    target = st.sidebar.selectbox("Variable à prédire (y)", df.columns)
-    features = st.sidebar.multiselect("Variables explicatives (X)", [c for c in df.columns if c != target])
+if uploaded_data is not None:
+    df = pd.read_excel(uploaded_data)
+    st.write("Aperçu des données :", df.head())
 
-    if len(features) > 0:
-        # pipeline
-        X = df[features]
-        y = df[target]
+# ---- 3. Paramètres interactifs pour la prédiction ----
+st.subheader("🔧 Paramètres du scénario")
+col1, col2, col3 = st.columns(3)
 
-        imputer = SimpleImputer(strategy='median')
-        scaler = StandardScaler()
-        model = Ridge(alpha=1.0)
+with col1:
+    taux_interet = st.slider("Taux d'intérêt (%)", 0.0, 15.0, 3.0)
+with col2:
+    invest_public = st.slider("Investissement public (en milliards)", 0.0, 500.0, 150.0)
+with col3:
+    croissance_pib = st.slider("Croissance PIB (%)", -5.0, 10.0, 2.0)
 
-        pipe = Pipeline([
-            ('imputer', imputer),
-            ('scaler', scaler),
-            ('ridge', model)
-        ])
+# ---- 4. Prédiction ----
+if uploaded_model is not None and st.button("Prédire l'inflation"):
+    X_new = pd.DataFrame([[taux_interet, invest_public, croissance_pib]],
+                         columns=["Taux_interet", "Invest_Public", "Croissance_PIB"])
+    prediction = model.predict(X_new)
+    st.success(f"📈 Inflation prévue : **{prediction[0]:.2f}%**")
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        pipe.fit(X_train, y_train)
-        score = pipe.score(X_test, y_test)
-
-        st.subheader("⚙️ Modèle de Régression entraîné")
-        st.write(f"R² sur test = {score:.2f}")
-
-        # --- Scénarios interactifs ---
-        st.subheader("📝 Scénario interactif")
-        inputs = {}
-        for f in features:
-            minv, maxv = float(df[f].min()), float(df[f].max())
-            val = st.slider(f"{f}", minv, maxv, float(df[f].mean()))
-            inputs[f] = val
-
-        new_data = pd.DataFrame([inputs])
-        pred = pipe.predict(new_data)[0]
-        st.success(f"Prévision de {target} = {pred:.2f}")
-
-        st.caption("Déplacez les curseurs pour simuler différents scénarios macroéconomiques.")
-
-# --- 3bis. Paramètres Clustering ---
+    # Exemple d'affichage graphique
+    fig, ax = plt.subplots()
+    ax.bar(["Inflation prévue"], [prediction[0]], color='skyblue')
+    ax.set_ylabel("Inflation (%)")
+    st.pyplot(fig)
 else:
-    features = st.sidebar.multiselect("Variables pour le clustering", df.columns)
-    k = st.sidebar.slider("Nombre de clusters (k)", 2, 8, 3)
+    st.info("Charge un modèle et clique sur Prédire.")
 
-    if len(features) > 0:
-        X = df[features].copy()
-        X_scaled = StandardScaler().fit_transform(SimpleImputer(strategy='median').fit_transform(X))
-
-        km = KMeans(n_clusters=k, random_state=42).fit(X_scaled)
-        df['Cluster'] = km.labels_
-
-        st.subheader("📍 Résultat du clustering")
-        st.write(df[['Cluster'] + features].head())
-
-        # visualisation
-        if len(features) >= 2:
-            plt.figure(figsize=(6, 4))
-            sns.scatterplot(x=df[features[0]], y=df[features[1]], hue=df['Cluster'], palette="Set2")
-            plt.xlabel(features[0])
-            plt.ylabel(features[1])
-            plt.title("Clustering")
-            st.pyplot(plt)
-
-        st.caption("Les clusters regroupent des observations économiquement proches.")
-
+# ---- 5. Infos supplémentaires ----
+st.sidebar.markdown("---")
+st.sidebar.write("💡 **Astuce :** tu peux modifier les sliders pour tester plusieurs scénarios.")
