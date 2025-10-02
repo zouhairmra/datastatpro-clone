@@ -28,11 +28,11 @@ st.subheader("🔧 Paramètres du scénario")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    taux_interet = st.slider("Taux d'intérêt (%)", 0.0, 15.0, 3.0)
+    taux_interet = st.slider("pib", 0.0, 15.0, 3.0)
 with col2:
-    invest_public = st.slider("Investissement public (en milliards)", 0.0, 500.0, 150.0)
+    invest_public = st.slider("inflation", 0.0, 500.0, 150.0)
 with col3:
-    croissance_pib = st.slider("Croissance PIB (%)", -5.0, 10.0, 2.0)
+    croissance_pib = st.slider("chjomage", -5.0, 10.0, 2.0)
 
 # ---- 4. Prédiction ----
 if uploaded_model is not None and st.button("Prédire l'inflation"):
