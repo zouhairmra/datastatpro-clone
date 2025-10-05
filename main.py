@@ -6,7 +6,7 @@ import numpy as np
 from gpt4all import GPT4All
 
 # Charger le modèle GPT4All local
-gpt = GPT4All("models/gpt4all_model.bin")
+#gpt = GPT4All("models/gpt4all_model.bin")#
 
 st.title("Assistant IA pour les données économiques")
 
