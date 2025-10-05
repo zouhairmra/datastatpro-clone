@@ -1,66 +1,111 @@
+# app.py
 import streamlit as st
-import pandas as pd
-from prophet import Prophet
-import plotly.express as px
 import numpy as np
-from gpt4all import GPT4All
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# Charger le modèle GPT4All local
-#gpt = GPT4All("models/gpt4all_model.bin")#
+st.set_page_config(layout="wide", page_title="EconMath - Applis")
 
-st.title("Assistant IA pour les données économiques")
+st.title("EconMath — Applications mathématiques pour l'économie")
+st.write("Simulateur et explications interactives pour comprendre l'offre, la demande, l'élasticité...")
 
-user_question = st.text_input("Posez une question sur le PIB :")
+# Sidebar navigation
+page = st.sidebar.selectbox("Aller à", ["Accueil", "Offre-Demande", "Elasticité", "Explique (LLM local)"])
 
-if user_question:
-    # Créer le prompt pour GPT4All
-    prompt = f"Données économiques (aperçu des 20 premières lignes) :\n{df.head(20).to_dict()}\nQuestion : {user_question}"
-    
-    # Générer la réponse
-    response = gpt.generate(prompt)
-    
-    # Afficher la réponse
-    st.write(response)
-# GPT4All imports
- #from gpt4all import GPT4All  # décommente si GPT4All est installé
+########################
+# Accueil
+########################
+if page == "Accueil":
+    st.header("Bienvenue")
+    st.markdown("""
+    - Utilise les pages pour explorer des concepts économiques via des simulations.
+    - Option LLM local : obtenir des explications textuelles (voir page 'Explique').
+    """)
 
-# --- Chargement des données ---
-df = pd.read_csv("data/pib.csv", parse_dates=['Date'])
-df.sort_values('Date', inplace=True)
+########################
+# Offre - Demande
+########################
+if page == "Offre-Demande":
+    st.header("Simulateur Offre — Demande")
+    st.markdown("Définis les fonctions linéaires : demande P = a - bQ ; offre P = c + dQ")
 
-st.title("Portfolio IA pour l'économie")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Paramètres Demande")
+        a = st.number_input("a (intercept demande)", value=100.0, step=1.0)
+        b = st.number_input("b (pente demande)", value=1.0, step=0.1)
+    with col2:
+        st.subheader("Paramètres Offre")
+        c = st.number_input("c (intercept offre)", value=10.0, step=1.0)
+        d = st.number_input("d (pente offre)", value=0.5, step=0.1)
 
-# --- Sélection de pays ou indicateur (si dataset multi-pays) ---
-# Pour cet exemple, nous avons une seule série
-st.subheader("Prévisions du PIB")
+    # Calcul équilibre linéaire: a - bQ = c + dQ -> Q* = (a - c) / (b + d)
+    if b + d == 0:
+        st.error("b + d ne peut pas être 0")
+    else:
+        Q_star = (a - c) / (b + d)
+        P_star = a - b * Q_star
+        st.metric("Quantité d'équilibre Q*", f"{Q_star:.3f}")
+        st.metric("Prix d'équilibre P*", f"{P_star:.3f}")
 
-# --- Modèle Prophet ---
-if st.button("Lancer la prévision"):
-    m = Prophet()
-    df_prophet = df.rename(columns={"Date":"ds","PIB":"y"})
-    m.fit(df_prophet)
-    future = m.make_future_dataframe(periods=8, freq='Q')
-    forecast = m.predict(future)
-    
-    fig = px.line(forecast, x='ds', y='yhat', title='Prévision du PIB avec Prophet')
-    fig.add_scatter(x=df['Date'], y=df['PIB'], mode='lines', name='Données réelles')
-    st.plotly_chart(fig)
+        # Construction des courbes
+        Q = np.linspace(0, max(0, Q_star*2), 200)
+        P_d = a - b * Q
+        P_s = c + d * Q
 
-# --- Question à GPT4All ---
-st.subheader("Assistant IA pour les données économiques")
-user_question = st.text_input("Posez une question sur le PIB :")
+        fig, ax = plt.subplots()
+        ax.plot(Q, P_d, label="Demande P=a-bQ")
+        ax.plot(Q, P_s, label="Offre P=c+dQ")
+        ax.scatter([Q_star], [P_star], color="red", zorder=5)
+        ax.annotate(f"Equilibre\nQ={Q_star:.2f}\nP={P_star:.2f}", xy=(Q_star, P_star), xytext=(Q_star*0.6, P_star+5),
+                    arrowprops=dict(arrowstyle="->"))
+        ax.set_xlabel("Quantité Q")
+        ax.set_ylabel("Prix P")
+        ax.legend()
+        st.pyplot(fig)
 
-if user_question:
-    st.write("Réponse IA :")
-    # Exemple pseudo-code pour GPT4All
-    """
-    gpt = GPT4All("models/gpt4all_model.bin")
-    prompt = f"Données PIB : {df.head(20).to_dict()}\nQuestion : {user_question}"
-    response = gpt.generate(prompt)
-    st.write(response)
-    """
-    st.write("Réponse générée par GPT4All ici (exemple)")
+        # option export
+        df = pd.DataFrame({"Q": Q, "P_demande": P_d, "P_offre": P_s})
+        st.download_button("Télécharger les données (CSV)", df.to_csv(index=False), "supply_demand.csv", "text/csv")
 
-# --- Statistiques descriptives ---
-st.subheader("Statistiques de base")
-st.write(df.describe())
+########################
+# Elasticité
+########################
+if page == "Elasticité":
+    st.header("Calculatrice d'élasticité-prix de la demande (point & arc)")
+    P1 = st.number_input("Prix initial P1", value=10.0)
+    P2 = st.number_input("Prix final P2", value=12.0)
+    Q1 = st.number_input("Quantité initiale Q1", value=100.0)
+    Q2 = st.number_input("Quantité finale Q2", value=80.0)
+
+    # Elasticité arc
+    if P1*Q1 == 0:
+        st.warning("P1*Q1 must be non-zero for arc elasticity")
+    else:
+        e_arc = ((Q2 - Q1) / ((Q2 + Q1)/2)) / ((P2 - P1) / ((P2 + P1)/2))
+        st.write(f"Elasticité arc (prix) = {e_arc:.3f}")
+
+    # Elasticité point approximation (dQ/dP approx)
+    if (P2 - P1) != 0:
+        slope = (Q2 - Q1) / (P2 - P1)
+        e_point = slope * (P1 / Q1)
+        st.write(f"Elasticité point (approx) = {e_point:.3f}")
+
+########################
+# Explique (intégration LLM local - optionnel)
+########################
+if page == "Explique (LLM local)":
+    st.header("Explique-moi (LLM local, optionnel)")
+    st.write("Pose une question conceptuelle ; le LLM local répondra (si installé).")
+    prompt = st.text_area("Question :", value="Qu'est-ce que l'élasticité-prix de la demande ?")
+    if st.button("Obtenir explication (local LLM)"):
+        st.info("Tentative d'appel au LLM local (gpt4all ou llama)...")
+        # --- Utilisation conditionnelle : si gpt4all installé, on l'utilise ---
+        try:
+            from gpt4all import GPT4All
+            model = GPT4All("ggml-gpt4all-j.bin")  # adapter au modèle que tu as
+            resp = model.generate(prompt)
+            st.write(resp)
+        except Exception as e:
+            st.error("LLM local non disponible. Installer gpt4all et charger un modèle ggml/gguf.")
+            st.write("Erreur :", e)
